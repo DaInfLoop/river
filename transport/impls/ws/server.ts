@@ -45,7 +45,6 @@ export class WebSocketServerTransport extends Transport<WebSocketConnection> {
       // @see https://github.com/oven-sh/bun/issues/4529#issuecomment-1789580327
 
       ws.on('message', (data) => {
-        console.log('Conn number ' + closed);
         const message = new Uint8Array(
           Array.isArray(data) ? Buffer.concat(data) : data,
         );
@@ -71,6 +70,7 @@ export class WebSocketServerTransport extends Transport<WebSocketConnection> {
       };
 
       ws.onerror = (msg) => {
+        ws.removeAllListeners('message');
         log?.warn(
           `${this.clientId} -- ws error from client ${
             conn?.connectedTo ?? 'unknown'
