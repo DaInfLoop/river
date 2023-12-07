@@ -33,19 +33,37 @@ export class WebSocketServerTransport extends Transport<WebSocketConnection> {
     this.wss.on('connection', (ws) => {
       let conn: WebSocketConnection | undefined = undefined;
 
-      ws.onmessage = (msg) => {
-        const parsedMsg = this.parseMsg(msg.data as Uint8Array);
-        if (parsedMsg) {
-          conn = new WebSocketConnection(this, parsedMsg.from, ws);
-          this.onConnect(conn);
-          this.handleMsg(parsedMsg);
+      // This message handler is used to set up a WebSocketConnection. The
+      // connection sets up its own message listener that handles
+      // processing messages after it has been set up.
+      // I think ideally we don't have two listeners, processing `message`,
+      // especially since this listener must process the _first_ message
+      // while the connection is still being setup.
+
+      // Also, we use `ws.on('message')` instead of `ws.onmessage` because
+      // Bun incorrectly implements `ws.onmessage`.
+      // @see https://github.com/oven-sh/bun/issues/4529#issuecomment-1789580327
+      ws.on('message', (data) => {
+        const message = new Uint8Array(
+          Array.isArray(data) ? Buffer.concat(data) : data,
+        );
+
+        // If we don't already have a connection, set one up for this ws
+        if (!conn) {
+          const parsed = this.parseMsg(message);
+          if (parsed) {
+            conn = new WebSocketConnection(this, parsed.from, ws);
+            this.onConnect(conn);
+            conn.onMessage(message);
+          }
         }
-      };
+      });
 
       // close is always emitted, even on error, ok to do cleanup here
       ws.onclose = () => {
         if (conn) {
           this.onDisconnect(conn);
+          conn = undefined;
         }
       };
 

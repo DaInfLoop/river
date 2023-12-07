@@ -13,11 +13,19 @@ export class WebSocketConnection extends Connection {
     super(transport, connectedTo);
     this.ws = ws;
     ws.binaryType = 'arraybuffer';
-    this.ws.onmessage = (msg) => this.onMessage(msg.data as Uint8Array);
+
+    // Bun ws.onmessage currently does not work (as of v1.0.15), so we must use
+    // ws.on('message'). @see https://github.com/oven-sh/bun/issues/4529#issuecomment-1789580327
+    ws.on('message', (data) => {
+      this.onMessage(
+        new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : data),
+      );
+    });
   }
 
   send(payload: Uint8Array) {
-    if (this.ws.readyState === this.ws.OPEN) {
+    // Bun ws.OPEN seems to be unimplemented, so we use the static value instead
+    if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(payload);
       return true;
     } else {
