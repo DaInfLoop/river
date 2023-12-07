@@ -34,6 +34,7 @@ export class WebSocketConnection extends Connection {
   }
 
   async close() {
+    this.ws.removeAllListeners('message');
     this.ws.close();
   }
 }

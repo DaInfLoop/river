@@ -43,7 +43,9 @@ export class WebSocketServerTransport extends Transport<WebSocketConnection> {
       // Also, we use `ws.on('message')` instead of `ws.onmessage` because
       // Bun incorrectly implements `ws.onmessage`.
       // @see https://github.com/oven-sh/bun/issues/4529#issuecomment-1789580327
+
       ws.on('message', (data) => {
+        console.log('Conn number ' + closed);
         const message = new Uint8Array(
           Array.isArray(data) ? Buffer.concat(data) : data,
         );
@@ -61,6 +63,7 @@ export class WebSocketServerTransport extends Transport<WebSocketConnection> {
 
       // close is always emitted, even on error, ok to do cleanup here
       ws.onclose = () => {
+        ws.removeAllListeners('message');
         if (conn) {
           this.onDisconnect(conn);
           conn = undefined;
