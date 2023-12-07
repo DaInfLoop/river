@@ -16,6 +16,7 @@ export class WebSocketConnection extends Connection {
 
     // Bun ws.onmessage currently does not work (as of v1.0.15), so we must use
     // ws.on('message'). @see https://github.com/oven-sh/bun/issues/4529#issuecomment-1789580327
+    console.log(ws.listenerCount('message'));
     ws.on('message', (data) => {
       this.onMessage(
         new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : data),

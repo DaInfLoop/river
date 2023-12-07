@@ -34,48 +34,6 @@ describe.each(codecs)(
       httpServer.close();
     });
 
-    test('rpc', async () => {
-      const [clientTransport, serverTransport] = getTransports();
-      const serviceDefs = { test: TestServiceConstructor() };
-      const server = await createServer(serverTransport, serviceDefs);
-      const client = createClient<typeof server>(clientTransport);
-      const result = await client.test.add({ n: 3 });
-      assert(result.ok);
-      expect(result.payload).toStrictEqual({ result: 3 });
-    });
-
-    test('fallible rpc', async () => {
-      const [clientTransport, serverTransport] = getTransports();
-      const serviceDefs = { test: FallibleServiceConstructor() };
-      const server = await createServer(serverTransport, serviceDefs);
-      const client = createClient<typeof server>(clientTransport);
-      const result = await client.test.divide({ a: 10, b: 2 });
-      assert(result.ok);
-      expect(result.payload).toStrictEqual({ result: 5 });
-      const result2 = await client.test.divide({ a: 10, b: 0 });
-      assert(!result2.ok);
-      expect(result2.payload).toStrictEqual({
-        code: DIV_BY_ZERO,
-        message: 'Cannot divide by zero',
-        extras: {
-          test: 'abc',
-        },
-      });
-    });
-
-    test('rpc with binary (uint8array)', async () => {
-      const [clientTransport, serverTransport] = getTransports();
-      const serviceDefs = { test: BinaryFileServiceConstructor() };
-      const server = await createServer(serverTransport, serviceDefs);
-      const client = createClient<typeof server>(clientTransport);
-      const result = await client.test.getFile({ file: 'test.py' });
-      assert(result.ok);
-      assert(result.payload.contents instanceof Uint8Array);
-      expect(new TextDecoder().decode(result.payload.contents)).toStrictEqual(
-        'contents for file test.py',
-      );
-    });
-
     test('stream', async () => {
       const [clientTransport, serverTransport] = getTransports();
       const serviceDefs = { test: TestServiceConstructor() };
@@ -152,6 +110,48 @@ describe.each(codecs)(
       const res = await client.test.getAll({});
       assert(res.ok);
       return expect(res.payload.msgs).toStrictEqual(expected);
+    });
+
+    test('rpc', async () => {
+      const [clientTransport, serverTransport] = getTransports();
+      const serviceDefs = { test: TestServiceConstructor() };
+      const server = await createServer(serverTransport, serviceDefs);
+      const client = createClient<typeof server>(clientTransport);
+      const result = await client.test.add({ n: 3 });
+      assert(result.ok);
+      expect(result.payload).toStrictEqual({ result: 3 });
+    });
+
+    test('fallible rpc', async () => {
+      const [clientTransport, serverTransport] = getTransports();
+      const serviceDefs = { test: FallibleServiceConstructor() };
+      const server = await createServer(serverTransport, serviceDefs);
+      const client = createClient<typeof server>(clientTransport);
+      const result = await client.test.divide({ a: 10, b: 2 });
+      assert(result.ok);
+      expect(result.payload).toStrictEqual({ result: 5 });
+      const result2 = await client.test.divide({ a: 10, b: 0 });
+      assert(!result2.ok);
+      expect(result2.payload).toStrictEqual({
+        code: DIV_BY_ZERO,
+        message: 'Cannot divide by zero',
+        extras: {
+          test: 'abc',
+        },
+      });
+    });
+
+    test('rpc with binary (uint8array)', async () => {
+      const [clientTransport, serverTransport] = getTransports();
+      const serviceDefs = { test: BinaryFileServiceConstructor() };
+      const server = await createServer(serverTransport, serviceDefs);
+      const client = createClient<typeof server>(clientTransport);
+      const result = await client.test.getFile({ file: 'test.py' });
+      assert(result.ok);
+      assert(result.payload.contents instanceof Uint8Array);
+      expect(new TextDecoder().decode(result.payload.contents)).toStrictEqual(
+        'contents for file test.py',
+      );
     });
 
     const CONCURRENCY = 10;
