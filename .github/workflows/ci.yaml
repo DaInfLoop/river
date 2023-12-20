@@ -45,5 +45,11 @@ jobs:
       - name: Check types and style
         run: npm run check
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        if: ${{ matrix.test }} == "bunx vitest"
+        with:
+          bun-version: latest
+
       - name: Test
         run: ${{ matrix.test }} 
